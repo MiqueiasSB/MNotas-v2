@@ -63,7 +63,7 @@ jobs:
           ./vendor/bin/sail up -d --build
 
           # Espera o MySQL iniciar
-          RETRIES=30
+          RETRIES=15
           COUNT=0
           until ./vendor/bin/sail exec mysql sh -c 'mysqladmin ping -hmysql --silent'; do
             COUNT=$((COUNT+1))
