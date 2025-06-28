@@ -37,17 +37,24 @@ jobs:
           fi
 
           cd mnotas
+
+          git config --global --add safe.directory /var/www/mnotas
           git pull origin main
 
-          chown -R root:root .
+          # Ajusta permissões para que o container PHP possa escrever
+          chown -R www-data:www-data .
+          chmod -R 775 .
 
-          # Sobe containers primeiro
-          ./vendor/bin/sail up -d --build || bash sail up -d --build
+          # Instala o Composer para ter acesso ao sail
+          docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -v $(pwd):/app \
+            -w /app \
+            laravelsail/php82-composer:latest \
+            composer install --no-interaction --prefer-dist --optimize-autoloader
 
-          # Instala dependências via Sail
-          ./vendor/bin/sail composer install --no-interaction --prefer-dist --optimize-autoloader || bash sail composer install --no-interaction --prefer-dist --optimize-autoloader
-
-          # Otimiza e migra
-          ./vendor/bin/sail artisan optimize || bash sail artisan optimize
-          ./vendor/bin/sail artisan migrate --force || bash sail artisan migrate --force
+          # Agora o sail já deve existir
+          ./vendor/bin/sail up -d --build
+          ./vendor/bin/sail artisan migrate --force
+          ./vendor/bin/sail artisan optimize
         EOF
