@@ -74,6 +74,9 @@ jobs:
             echo "⏳ Aguardando MySQL... ($COUNT/$RETRIES)"
             sleep 2
           done
+          
+          # Roda o build do Vite com container node
+          docker run --rm -u "$(id -u):$(id -g)" -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"
 
           # Comandos Laravel
           ./vendor/bin/sail artisan migrate --force
