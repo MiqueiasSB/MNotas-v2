@@ -32,20 +32,24 @@ jobs:
           set -e
 
           cd /var/www
+
           if [ ! -d "mnotas" ]; then
             git clone https://github.com/MiqueiasSB/MNotas-v2.git mnotas
           fi
 
           cd mnotas
-
           git config --global --add safe.directory /var/www/mnotas
           git pull origin main
 
-          # Ajusta permissões para que o container PHP possa escrever
+          # Permissões corretas para Laravel
           chown -R www-data:www-data .
           chmod -R 775 .
 
-          # Instala o Composer para ter acesso ao sail
+          # Garante permissões específicas
+          chown -R www-data:www-data storage bootstrap/cache
+          chmod -R ug+rwX storage bootstrap/cache
+
+          # Instala dependências
           docker run --rm \
             -u "$(id -u):$(id -g)" \
             -v $(pwd):/app \
@@ -53,8 +57,14 @@ jobs:
             laravelsail/php82-composer:latest \
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
-          # Agora o sail já deve existir
+          # Sobe os containers
           ./vendor/bin/sail up -d --build
+
+          # Espera o MySQL
+          echo "Aguardando MySQL iniciar..."
+          sleep 10
+
+          # Executa comandos Laravel
           ./vendor/bin/sail artisan migrate --force
           ./vendor/bin/sail artisan optimize
         EOF
