@@ -12,7 +12,9 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });*/
-
+Route::get('/dashboard', function () {
+    return redirect()->route('dashboard');
+});
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

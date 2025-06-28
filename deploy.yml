@@ -1,0 +1,33 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+    - name: Add VPS to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+    - name: Deploy code to VPS
+      run: |
+        ssh root@SEU-IP-DA-VPS << 'EOF'
+          cd /caminho/do/projeto
+          git pull origin main
+          docker compose down
+          docker compose up -d --build
+          docker exec laravel.test php artisan migrate --force
+        EOF
