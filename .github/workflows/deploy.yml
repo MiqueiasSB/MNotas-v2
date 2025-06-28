@@ -31,6 +31,10 @@ jobs:
           mkdir -p /var/www/mnotas
           cd /var/www/mnotas
 
+          cat << 'EOT' > .env
+          ${{ secrets.ENV_FILE }}
+          EOT
+
           # Clona o projeto se ainda não existir
           if [ ! -d ".git" ]; then
             git clone https://github.com/MiqueiasSB/MNotas-v2.git .
@@ -48,5 +52,6 @@ jobs:
           ./vendor/bin/sail up -d --build
 
           # Roda as migrações
+          ./vendor/bin/sail artisan optimize
           ./vendor/bin/sail artisan migrate --force
         EOF
