@@ -24,30 +24,30 @@ jobs:
 
     - name: Upload .env to VPS
       run: |
-        echo "${{ secrets.ENV_FILE }}" | ssh root@147.93.9.109 "cat > /var/www/mnotas/.env"
+        echo "${{ secrets.ENV_FILE }}" | ssh root@147.93.9.109 "mkdir -p /var/www/mnotas && cat > /var/www/mnotas/.env"
 
     - name: Deploy to VPS
       run: |
         ssh root@147.93.9.109 << 'EOF'
           set -e
 
-          mkdir -p /var/www/mnotas
-          cd /var/www/mnotas
-
-          # Clona o projeto se ainda não existir
-          if [ ! -d ".git" ]; then
-            git clone https://github.com/MiqueiasSB/MNotas-v2.git .
-          else
-            git pull origin main
+          cd /var/www
+          if [ ! -d "mnotas" ]; then
+            git clone https://github.com/MiqueiasSB/MNotas-v2.git mnotas
           fi
+
+          cd mnotas
+          git pull origin main
 
           chown -R root:root .
 
-          docker run --rm -v $PWD:/app -w /app laravelsail/php82-composer:latest composer install --no-interaction --prefer-dist --optimize-autoloader
+          # Sobe containers primeiro
+          ./vendor/bin/sail up -d --build || bash sail up -d --build
 
-          ./vendor/bin/sail up -d --build
+          # Instala dependências via Sail
+          ./vendor/bin/sail composer install --no-interaction --prefer-dist --optimize-autoloader || bash sail composer install --no-interaction --prefer-dist --optimize-autoloader
 
-          ./vendor/bin/sail artisan optimize
-          ./vendor/bin/sail artisan migrate --force
+          # Otimiza e migra
+          ./vendor/bin/sail artisan optimize || bash sail artisan optimize
+          ./vendor/bin/sail artisan migrate --force || bash sail artisan migrate --force
         EOF
-
