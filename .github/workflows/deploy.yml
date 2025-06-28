@@ -39,7 +39,11 @@ jobs:
 
           cd mnotas
           git config --global --add safe.directory /var/www/mnotas
-          git pull origin main
+
+          # Verifica se há alterações antes de fazer pull
+          if [ $(git rev-parse HEAD) != $(git rev-parse origin/main) ]; then
+            git pull origin main
+          fi
 
           # Permissões corretas para Laravel
           chown -R www-data:www-data .
@@ -55,14 +59,16 @@ jobs:
             -v $(pwd):/app \
             -w /app \
             laravelsail/php82-composer:latest \
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
           # Sobe os containers
           ./vendor/bin/sail up -d --build
 
-          # Espera o MySQL
+          # Espera o MySQL iniciar
           echo "Aguardando MySQL iniciar..."
-          sleep 10
+          until nc -z localhost 3306; do
+            sleep 1
+          done
 
           # Executa comandos Laravel
           ./vendor/bin/sail artisan migrate --force
