@@ -22,12 +22,31 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-    - name: Deploy code to VPS
+    - name: Deploy to VPS
       run: |
         ssh root@147.93.9.109 << 'EOF'
+          set -e
+
+          # Garante que o diretório existe
+          mkdir -p /var/www/mnotas
           cd /var/www/mnotas
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
-          docker exec laravel.test php artisan migrate --force
+
+          # Clona o projeto se ainda não existir
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/MiqueiasSB/MNotas-v2.git .
+          else
+            git pull origin main
+          fi
+
+          # Garante permissões corretas se necessário (opcional)
+          chown -R root:root .
+
+          # Instala dependências, se necessário
+          docker run --rm -v $PWD:/app -w /app laravelsail/php82-composer:latest composer install --no-interaction --prefer-dist --optimize-autoloader
+
+          # Sobe o projeto com Sail
+          ./vendor/bin/sail up -d --build
+
+          # Roda as migrações
+          ./vendor/bin/sail artisan migrate --force
         EOF
