@@ -63,8 +63,17 @@ jobs:
           ./vendor/bin/sail up -d --build
 
           # Espera o MySQL iniciar
-          echo "Aguardando MySQL iniciar..."
-          ./vendor/bin/sail exec mysql sh -c 'until mysqladmin ping -hlocalhost --silent; do sleep 1; done'
+          RETRIES=30
+          COUNT=0
+          until ./vendor/bin/sail exec mysql sh -c 'mysqladmin ping -hmysql --silent'; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -ge $RETRIES ]; then
+              echo "⛔️ MySQL não respondeu após $RETRIES tentativas."
+              exit 1
+            fi
+            echo "⏳ Aguardando MySQL... ($COUNT/$RETRIES)"
+            sleep 2
+          done
 
           # Comandos Laravel
           ./vendor/bin/sail artisan migrate --force
