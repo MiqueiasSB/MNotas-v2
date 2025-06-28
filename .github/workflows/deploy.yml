@@ -24,8 +24,8 @@ jobs:
 
     - name: Deploy code to VPS
       run: |
-        ssh root@SEU-IP-DA-VPS << 'EOF'
-          cd /caminho/do/projeto
+        ssh root@147.93.9.109 << 'EOF'
+          cd /var/www/mnotas
           git pull origin main
           docker compose down
           docker compose up -d --build
