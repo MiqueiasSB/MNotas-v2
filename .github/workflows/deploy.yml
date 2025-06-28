@@ -28,26 +28,26 @@ jobs:
 
     - name: Deploy to VPS
       run: |
-      ssh root@147.93.9.109 << 'EOF'
-        set -e
+        ssh root@147.93.9.109 << 'EOF'
+          set -e
 
-        mkdir -p /var/www/mnotas
-        cd /var/www/mnotas
+          mkdir -p /var/www/mnotas
+          cd /var/www/mnotas
 
-        # Clona o projeto se ainda não existir
-        if [ ! -d ".git" ]; then
-          git clone https://github.com/MiqueiasSB/MNotas-v2.git .
-        else
-          git pull origin main
-        fi
+          # Clona o projeto se ainda não existir
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/MiqueiasSB/MNotas-v2.git .
+          else
+            git pull origin main
+          fi
 
-        chown -R root:root .
+          chown -R root:root .
 
-        docker run --rm -v $PWD:/app -w /app laravelsail/php82-composer:latest composer install --no-interaction --prefer-dist --optimize-autoloader
+          docker run --rm -v $PWD:/app -w /app laravelsail/php82-composer:latest composer install --no-interaction --prefer-dist --optimize-autoloader
 
-        ./vendor/bin/sail up -d --build
+          ./vendor/bin/sail up -d --build
 
-        ./vendor/bin/sail artisan optimize
-        ./vendor/bin/sail artisan migrate --force
-      EOF
+          ./vendor/bin/sail artisan optimize
+          ./vendor/bin/sail artisan migrate --force
+        EOF
 
