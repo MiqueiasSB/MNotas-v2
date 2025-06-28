@@ -57,7 +57,7 @@ jobs:
             -v $(pwd):/app \
             -w /app \
             laravelsail/php82-composer:latest \
-            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            composer install --no-interaction --prefer-dist --optimize-autoloader
 
           # Sobe os containers do Sail
           ./vendor/bin/sail up -d --build
