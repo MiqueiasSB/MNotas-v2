@@ -40,20 +40,18 @@ jobs:
           cd mnotas
           git config --global --add safe.directory /var/www/mnotas
 
-          # Verifica se há alterações antes de fazer pull
-          if [ $(git rev-parse HEAD) != $(git rev-parse origin/main) ]; then
-            git pull origin main
-          fi
+          # Atualiza o repositório com segurança
+          git fetch origin
+          git reset --hard origin/main
+          git clean -fd
 
-          # Permissões corretas para Laravel
+          # Permissões adequadas
           chown -R www-data:www-data .
           chmod -R 775 .
-
-          # Garante permissões específicas
           chown -R www-data:www-data storage bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
 
-          # Instala dependências
+          # Instala dependências via container
           docker run --rm \
             -u "$(id -u):$(id -g)" \
             -v $(pwd):/app \
@@ -61,72 +59,14 @@ jobs:
             laravelsail/php82-composer:latest \
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
-          # Verifica se o sail foi instalado
-          ls -la ./vendor/bin/
-
-          # Verifica se o arquivo sail existe
-          if [ ! -f ./vendor/bin/sail ]; then
-            echo "O arquivo sail não foi encontrado!"
-            exit 1
-          fi
-
-          # Sobe os containers
+          # Sobe os containers do Sail
           ./vendor/bin/sail up -d --build
 
           # Espera o MySQL iniciar
           echo "Aguardando MySQL iniciar..."
-          until nc -z localhost 3306; do
-            sleep 1
-          done
+          ./vendor/bin/sail exec mysql sh -c 'until mysqladmin ping -hlocalhost --silent; do sleep 1; done'
 
-          # Executa comandos Laravel
+          # Comandos Laravel
           ./vendor/bin/sail artisan migrate --force
           ./vendor/bin/sail artisan optimize
         EOF
-          run: |
-            ssh root@147.93.9.109 << 'EOF'
-              set -e
-
-              cd /var/www
-
-              if [ ! -d "mnotas" ]; then
-                git clone https://github.com/MiqueiasSB/MNotas-v2.git mnotas
-              fi
-
-              cd mnotas
-              git config --global --add safe.directory /var/www/mnotas
-
-              # Verifica se há alterações antes de fazer pull
-              if [ $(git rev-parse HEAD) != $(git rev-parse origin/main) ]; then
-                git pull origin main
-              fi
-
-              # Permissões corretas para Laravel
-              chown -R www-data:www-data .
-              chmod -R 775 .
-
-              # Garante permissões específicas
-              chown -R www-data:www-data storage bootstrap/cache
-              chmod -R ug+rwX storage bootstrap/cache
-
-              # Instala dependências
-              docker run --rm \
-                -u "$(id -u):$(id -g)" \
-                -v $(pwd):/app \
-                -w /app \
-                laravelsail/php82-composer:latest \
-                composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-              # Sobe os containers
-              ./vendor/bin/sail up -d --build
-
-              # Espera o MySQL iniciar
-              echo "Aguardando MySQL iniciar..."
-              until nc -z localhost 3306; do
-                sleep 1
-              done
-
-              # Executa comandos Laravel
-              ./vendor/bin/sail artisan migrate --force
-              ./vendor/bin/sail artisan optimize
-            EOF
