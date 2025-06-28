@@ -50,6 +50,8 @@ jobs:
           chmod -R 775 .
           chown -R www-data:www-data storage bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
+          chmod -R 777 storage bootstrap/cache
+
 
           # Instala dependências via container
           docker run --rm \
