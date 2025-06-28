@@ -60,8 +60,8 @@ jobs:
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
           # Define UID e GID para docker-compose usar
-          export UID=$(id -u)
-          export GID=$(id -g)
+          export SUID=$(id -u)
+          export SGID=$(id -g)
 
           # Sobe os containers do Sail
           ./vendor/bin/sail up -d --build
